@@ -14,13 +14,14 @@ class Plane:
 	# turning_degrees : The number of degrees the plane needs to turn. Default value is 0
 	# exclusion_zone  : The area in which no other planes are allowed to enter. 
 	#       For example, if exclusion_zone is set at 50, no other planes can come within 50 pixels of this plane
-	def __init__(self, x, y, heading, speed):
+	def __init__(self, x, y, heading, speed, target):
 		self.x = x
 		self.y = y
 		self.heading = heading
 		self.speed = speed
 		self.turning_degrees = 0
 		self.exclusion_zone = 100
+		self.target = target
 
 	# move the plane. executes every frame. If the plane needs to turn (turning_degrees != 0) that happens as well
 	def move(self):
