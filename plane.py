@@ -9,6 +9,7 @@ class Plane:
 	# y       : y-coordinate of the plane
 	# heading : current heading (direction) of the plane. Ranges from 0-360. 0 is directly right
 	# speed   : speed of the plane. currently the only value that works well is 1
+	# target  : coordinates for the target (destination) of the plane. Where it should go
 	#
 	# ----------- Other Values ------------------------
 	# turning_degrees : The number of degrees the plane needs to turn. Default value is 0

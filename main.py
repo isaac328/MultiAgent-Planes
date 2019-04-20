@@ -22,6 +22,8 @@ def main():
 	runSimulation()
 
 
+# function to determine whether r is on the line segment
+# between p and q
 def onSegment(p, q, r):
 	if q[0] <= max(p[0], r[0]) and q[0] >= min(p[0], r[0]) and q[1] <= max(p[1], r[1]) and q[1] >= min(p[1], r[1]):
 	   return True
@@ -81,8 +83,9 @@ def doIntersect(p1, q1, p2, q2):
 
 def runSimulation():
 	# the current planes in the simulation
-	#planes = [Plane(100, 100, 0, 1, (500,100)), Plane(400, 300, 240, 1, (200, 10))]
-	planes = [Plane(50, 500, -55, 1, (500, 50)), Plane(500, 500, -85, 1, (20, 20))]
+	#planes = [Plane(100, 100, 0, 1, (500,100)), Plane(400, 300, 240, 1, (200, 10))] # one plane coming into the path of another
+	planes = [Plane(50, 500, -55, 1, (500, 50)), Plane(500, 500, -85, 1, (20, 20))] # intersection paths
+	#planes = [Plane(100, 100, 0, 1, (500, 100)), Plane(500, 100, 180, 1, (100, 100))] # head on collision
 	#planes = [Plane(random.randint(0, 500), random.randint(0, 500), random.randint(0, 360), 1, (random.randint(0,500), random.randint(0,500))) for _ in range(10)]
 	while True:
 		# go through events
@@ -98,55 +101,112 @@ def runSimulation():
 
 		DISPLAYSURF.fill((0,0,0))
 
+		# go through all the planes currently in the simulation
 		for plane1 in planes:
+			# flag for if this plane (plane1) is on an intersecting path with another plane
+			# set to false by default
 			intersecting = False
 
+			# These are the coordinates of a point on the path of the plane
+			# Basically this is a point 500 pixels ahead of the plane on its current path
+			# I use this to draw a line from the plane to this point, which is how the 
+			# direction line (green line) is drawn. Also used to determine if two planes 
+			# are on intersecting paths.
 			plane_1_x = plane1.x + (500 * math.cos(math.radians(plane1.heading)))
 			plane_1_y = plane1.y + (500 * math.sin(math.radians(plane1.heading)))
-			for plane2 in planes:
 
+			# now we have to go through every other plane and check if theyre intersecting
+			for plane2 in planes:
+				
+				# if the two planes are the same, obviously they cant be intersecting
 				if plane1 is plane2:
 					continue
 
 				# if plane1.turning_degrees > 0 or plane2.turning_degrees > 0:
 				# 	continue
 
+				# same thing as above, a point on the path of plane2 which is used for 
+				# drawing plane2's direction and checking for intersecting paths
 				plane_2_x = plane2.x + (500 * math.cos(math.radians(plane2.heading)))
 				plane_2_y = plane2.y + (500 * math.sin(math.radians(plane2.heading)))
 
+				# the straight line distance between the two planes
 				dist = math.sqrt((plane1.x - plane2.x)**2 + (plane1.y - plane2.y)**2)
+
+				# so now we need to check whether the two planes are intersecting or not
+				# first thing we check is whether the two planes are within the exlusion zones
+				# the exclusion zone says that no two planes can come within x distance of each other
+				# obviously if they are within that distance then they need to move apart
+				# The second thing we check is if the two planes are on intersecting paths
+				# This is done by creating two line segments, one for each plane. 
+				# the line segments end points are the current location of the plane and the points we created earlier (plane_1_x, plane_1_Y)
+				# if these line segments are intersecting then we know the planes are on an intersecting course.
 				if dist <= plane1.exclusion_zone * 2.2 and doIntersect((plane1.x, plane1.y), (plane_1_x, plane_1_y), (plane2.x, plane2.y), (plane_2_x, plane_2_y)):
+					# set the intersecting flag as true because we now found two planes that are intersecting
 					intersecting = True
 
+					# now we need to find the orientation of the two planes in relation to each other
+					# this will determine which direction each planes moves
+					# First we determine the orientation of plane 2 to plane 1.
+					# We create the line segment for plane 1 (representing its flight path) and check whether plane2
+					# is on the right or left side of the line segment. 
+					# note that at this point we know that the two are on intersecting paths
+					# so we wont get a scenario where plane 2 is actually moving away from plane 1. 
+					# If the orientation is equal to 1, then plane2 is to the right of plane1
 					if orientation((plane1.x, plane1.y), (plane_1_x, plane_1_y), (plane2.x, plane2.y)) == 1:
+						# thus, plane 1 needs to turn left to avoid plane 2
 						plane1.turn(-1)
+						# now we determine the orientation of plane1 to plane2 and move it accordingly
+						# if plane 1 is to the right of plane2
 						if orientation((plane2.x, plane2.y), (plane_2_x, plane_2_y), (plane1.x, plane1.y)) == 1:
 							plane2.turn(1)
+						# if plane1 is to the left of plane two
 						elif orientation((plane2.x, plane2.y), (plane_2_x, plane_2_y), (plane1.x, plane1.y)) == 2:
 							plane2.turn(-1)
+					# else if plane 2 is to the left of plane1
 					elif orientation((plane1.x, plane1.y), (plane_1_x, plane_1_y), (plane2.x, plane2.y)) == 2:
+						# turn right
 						plane1.turn(1)
+						# determine orientation of plane1 to plane 2
 						if orientation((plane2.x, plane2.y), (plane_2_x, plane_2_y), (plane1.x, plane1.y)) == 1:
 							plane2.turn(1)
 						elif orientation((plane2.x, plane2.y), (plane_2_x, plane_2_y), (plane1.x, plane1.y)) == 2:
 							plane2.turn(-1)
-			
-			if not intersecting:
-				if not onSegment((plane1.x, plane1.y), (plane_1_x, plane_1_y), plane1.target):
-					if orientation((plane1.x, plane1.y), (plane_1_x, plane_1_y), plane1.target) == 1:
+					# if the planes are on a direct (head on) path with each other
+					# this still needs to be worked out as it isnt working right now
+					elif orientation((plane1.x, plane1.y), (plane_1_x, plane_1_y), (plane2.x, plane2.y)) == 0:
 						plane1.turn(-1)
+						plane2.turn(-1)
+			
+			# if we checked against all other planes and plane1 is not an an intersecting path with any of them
+			# we need to make sure that the plane is on its correct course to its target location
+			if not intersecting:
+				# so first check if the plane is not on the correct course to its target
+				if not onSegment((plane1.x, plane1.y), (plane_1_x, plane_1_y), plane1.target):
+					# if it is not, find out where the target is in relation to the current path of the plane
+					# if it is to the right of the plane
+					if orientation((plane1.x, plane1.y), (plane_1_x, plane_1_y), plane1.target) == 1:
+						# turn the plane left
+						plane1.turn(-1)
+					# if it is to the left of the plane
 					elif orientation((plane1.x, plane1.y), (plane_1_x, plane_1_y), plane1.target) == 2:
+						# turn the plane right
 						plane1.turn(1)
 			
 
 					
 
-		
+		# loop for drawing the planes on screen
 		for plane in planes:
+			# move the plane
 			plane.move()
-			# pygame.draw.circle(DISPLAYSURF, (226, 57, 31), (int(plane.x), int(plane.y)), plane.exclusion_zone)
+			# draw a circle for the exlusion zone of the plane
+			pygame.draw.circle(DISPLAYSURF, (226, 57, 31), (int(plane.x), int(plane.y)), plane.exclusion_zone)
+			# draw a circle for the planes target
 			pygame.draw.circle(DISPLAYSURF, (0,0,255), plane.target, 5)
+			# draw a circle for the actual plane
 			pygame.draw.circle(DISPLAYSURF, (255, 255, 255), (int(plane.x), int(plane.y)), 2)
+			# draw a line for the path of the plane
 			pygame.draw.line(DISPLAYSURF, (0, 255, 0), (plane.x, plane.y), (plane.x + (1000*math.cos(math.radians(plane.heading))), plane.y + (1000 * math.sin(math.radians(plane.heading)))))
 
 
