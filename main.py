@@ -28,7 +28,7 @@ def main():
 		elif option == '3':
 			runSimulation([Plane(100, 100, 0, 1, (500, 100)), Plane(500, 100, 180, 1, (100, 100))])
 		elif option == '4':
-			runSimulation([Plane(100, 100, 0, 1, (600,100)), Plane(500, 100, 180, 1, (100,500))])#, Plane(500, 500, 240, 1, (100, 50))])
+			runSimulation([Plane(150, 100, 0, 1, (600,100)), Plane(500, 100, 180, 1, (100,500)), Plane(500, 500, 240, 1, (100, 50))])
 		elif option == '5':
 			printInfo()
 			print("")
@@ -69,7 +69,6 @@ def onSegment(p, q, r):
 #Q 1 --> Clockwise 
 #Q 2 --> Counterclockwise 
 def orientation(p, q, r):
-	# See https://www.geeksforgeeks.org/orientation-3-ordered-points/ 
 	# for details of below formula. 
 	val = (q[1] - p[1]) * (r[0] - q[0]) -  (q[0] - p[0]) * (r[1] - q[1])
 	if (val == 0):
@@ -159,12 +158,6 @@ def runSimulation(planes):
 			plane1_x_low = plane1.x - (plane1.exclusion_zone * math.cos(math.radians(plane1.heading)))
 			plane1_y_low = plane1.y - (plane1.exclusion_zone * math.sin(math.radians(plane1.heading)))
 
-			plane1_x_right = plane1.x + (plane1.exclusion_zone * math.cos(math.radians(plane1.heading + 90)))
-			plane1_y_right = plane1.y + (plane1.exclusion_zone * math.sin(math.radians(plane1.heading + 90)))
-
-			plane1_x_left = plane1.x + (plane1.exclusion_zone * math.cos(math.radians(plane1.heading - 90)))
-			plane1_y_left = plane1.y + (plane1.exclusion_zone * math.sin(math.radians(plane1.heading - 90)))
-
 			# now we have to go through every other plane and check if theyre intersecting
 			for plane2 in planes:
 				# if the two planes are the same, obviously they cant be intersecting
@@ -213,9 +206,8 @@ def runSimulation(planes):
 					# so we wont get a scenario where plane 2 is actually moving away from plane 1. 
 					# If the orientation is equal to 1, then plane2 is to the right of plane1
 					if orientation((plane1_x_low, plane1_y_low), (plane1_x_high, plane1_y_high), (plane2_x_low, plane2_y_low)) == 1:
-						# thus, plane 1 needs to turn left to avoid plane 2
-						plane1.turn(-1)
-						# now we determine the orientation of plane1 to plane2 and move it accordingly
+						# print("turn1")
+						# # now we determine the orientation of plane1 to plane2 and move it accordingly
 						# if plane 1 is to the right of plane2
 						if orientation((plane2_x_low, plane2_y_low), (plane2_x_high, plane2_y_high), (plane1_x_low, plane1_y_low)) == 1:
 							plane2.turn(1)
@@ -224,23 +216,15 @@ def runSimulation(planes):
 							plane2.turn(-1)
 					# else if plane 2 is to the left of plane1
 					elif orientation((plane1_x_low, plane1_y_low), (plane1_x_high, plane1_y_high), (plane2_x_low, plane2_y_low)) == 2:
-						# turn right
-						plane1.turn(1)
-						# determine orientation of plane1 to plane 2
+						# print("turn2")
+						# # determine orientation of plane1 to plane 2
 						if orientation((plane2_x_low, plane2_y_low), (plane2_x_high, plane2_y_high), (plane1_x_low, plane1_y_low)) == 1:
-							plane2.turn(1)
-						elif orientation((plane2_x_low, plane2_y_low), (plane2_x_high, plane2_y_high), (plane1_x_low, plane1_y_low)) == 2:
 							plane2.turn(-1)
-					# if the planes are on a direct (head on) path with each other
-					# this still needs to be worked out as it isnt working right now
-					elif orientation((plane1_x_low, plane1_y_low), (plane1_x_high, plane1_y_high), (plane2_x_low, plane2_y_low)) == 0:
-						plane1.turn(-1)
-						plane2.turn(-1)
+						elif orientation((plane2_x_low, plane2_y_low), (plane2_x_high, plane2_y_high), (plane1_x_low, plane1_y_low)) == 2:
+							plane2.turn(1)
 				elif dist <= plane1.exclusion_zone + plane2.exclusion_zone and doIntersect((plane1_x_low, plane1_y_low), (plane1_x_high, plane1_y_high), (plane2.x, plane2.y), (plane2_x_left, plane2_y_left)):
-					plane1.turn(1)
 					plane2.turn(1)
 				elif dist <= plane1.exclusion_zone + plane2.exclusion_zone and doIntersect((plane1_x_low, plane1_y_low), (plane1_x_high, plane1_y_high), (plane2.x, plane2.y), (plane2_x_right, plane2_y_right)):
-					plane1.turn(-1)
 					plane2.turn(-1)
 
 			# if we checked against all other planes and plane1 is not an an intersecting path with any of them
