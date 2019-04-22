@@ -3,6 +3,7 @@ from pygame.locals import *
 from plane import Plane
 import math
 import random
+import sys
 
 
 WINDOWWIDTH = 740
@@ -11,15 +12,48 @@ FPS = 30
 
 
 def main():
-	global FPSCLOCK, DISPLAYSURF, BASICFONT
+	print("\nWelcome to the In-Air Collision Avoidance Simulation!")
+	print()
+	printInfo()
+	print()
+	while True:
+		printOptions()
+		print("What do you want to do?")
+		option = input('-->')
+		
+		if option == '1':
+			runSimulation([Plane(50, 500, -55, 1, (500, 50)), Plane(500, 500, -85, 1, (20, 20))])
+		elif option == '2':
+			runSimulation([Plane(100, 100, 0, 1, (500,100)), Plane(400, 300, 240, 1, (200, 10))])
+		elif option == '3':
+			runSimulation([Plane(100, 100, 0, 1, (500, 100)), Plane(500, 100, 180, 1, (100, 100))])
+		elif option == '4':
+			runSimulation([Plane(100, 100, 0, 1, (600,100)), Plane(500, 100, 180, 1, (100,500))])#, Plane(500, 500, 240, 1, (100, 50))])
+		elif option == '5':
+			printInfo()
+			print("")
+		elif option == '6':
+			sys.exit()
 
-	pygame.init()
-	FPSCLOCK = pygame.time.Clock()
-	DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
-	BASICFONT = pygame.font.Font('freesansbold.ttf', 18)
-	pygame.display.set_caption('Plane Simulation')
+def printOptions():
+	print("Here are the pre-defined simulations")
+	print("1: Two Intersecting Planes")
+	print("2: One Plane intersecting the path of another")
+	print("3: Head on Collision between two planes")
+	print("4: Three Plane System")
+	print("5: About")
+	print("6: Exit")
 
-	runSimulation()
+def printInfo():
+	print("This is a simple simulation to demonstrate how airplanes can benefit from Multi-Agent Systems.")
+	print("The goal is to demonstrate that modeling planes as multi-agents to avoid in-air collisions can")
+	print("reduce the role of ATC's (Air Traffic Controllers) in flight management systems. This would allow")
+	print("ATC's to focus on other important areas, such as directing landings and takeoffs. This experiment")
+	print("presents a few different pre-defined scenarios, each with 2 or more planes on apparent collision courses.")
+	print("The planes are represented as white dots. The red circles around the planes represent the planes 'exclusion zone',")
+	print("an area in which other planes cannot enter. If a plane does enter this area, it must attempt to leave it immediately.")
+	print("The green lines leaving each plane represent the current course of the plane. The blue dots represent the target destination")
+	print("of a plane. If a plane goes off course to avoid another plane, it must return to a course which arrives at the target destination.")
 
 
 # function to determine whether r is on the line segment
@@ -77,16 +111,20 @@ def doIntersect(p1, q1, p2, q2):
 	if (o4 == 0 and onSegment(p2, q1, q2)):
 		return True 
   
-	return False # Doesn't fall in any of the above cases 
+	return False # Doesn't fall in any of the above cases
 
 
 
-def runSimulation():
-	# the current planes in the simulation
-	#planes = [Plane(100, 100, 0, 1, (500,100)), Plane(400, 300, 240, 1, (200, 10))] # one plane coming into the path of another
-	planes = [Plane(50, 500, -55, 1, (500, 50)), Plane(500, 500, -85, 1, (20, 20))] # intersection paths
-	#planes = [Plane(100, 100, 0, 1, (500, 100)), Plane(500, 100, 180, 1, (100, 100))] # head on collision
-	#planes = [Plane(random.randint(0, 500), random.randint(0, 500), random.randint(0, 360), 1, (random.randint(0,500), random.randint(0,500))) for _ in range(10)]
+
+def runSimulation(planes):
+	global FPSCLOCK, DISPLAYSURF, BASICFONT
+
+	pygame.init()
+	FPSCLOCK = pygame.time.Clock()
+	DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
+	BASICFONT = pygame.font.Font('freesansbold.ttf', 18)
+	pygame.display.set_caption('Plane Simulation')
+
 	while True:
 		# go through events
 		for event in pygame.event.get(): # event handling loop
@@ -121,9 +159,14 @@ def runSimulation():
 			plane1_x_low = plane1.x - (plane1.exclusion_zone * math.cos(math.radians(plane1.heading)))
 			plane1_y_low = plane1.y - (plane1.exclusion_zone * math.sin(math.radians(plane1.heading)))
 
+			plane1_x_right = plane1.x + (plane1.exclusion_zone * math.cos(math.radians(plane1.heading + 90)))
+			plane1_y_right = plane1.y + (plane1.exclusion_zone * math.sin(math.radians(plane1.heading + 90)))
+
+			plane1_x_left = plane1.x + (plane1.exclusion_zone * math.cos(math.radians(plane1.heading - 90)))
+			plane1_y_left = plane1.y + (plane1.exclusion_zone * math.sin(math.radians(plane1.heading - 90)))
+
 			# now we have to go through every other plane and check if theyre intersecting
 			for plane2 in planes:
-				
 				# if the two planes are the same, obviously they cant be intersecting
 				if plane1 is plane2:
 					continue
@@ -140,6 +183,12 @@ def runSimulation():
 				plane2_x_low = plane2.x - (plane2.exclusion_zone * math.cos(math.radians(plane2.heading)))
 				plane2_y_low = plane2.y - (plane2.exclusion_zone * math.sin(math.radians(plane2.heading)))
 
+				plane2_x_right = plane2.x + (plane2.exclusion_zone * math.cos(math.radians(plane2.heading + 90)))
+				plane2_y_right = plane2.y + (plane2.exclusion_zone * math.sin(math.radians(plane2.heading + 90)))
+
+				plane2_x_left = plane2.x + (plane2.exclusion_zone * math.cos(math.radians(plane2.heading - 90)))
+				plane2_y_left = plane2.y + (plane2.exclusion_zone * math.sin(math.radians(plane2.heading - 90)))
+
 				# the straight line distance between the two planes
 				dist = math.sqrt((plane1.x - plane2.x)**2 + (plane1.y - plane2.y)**2)
 
@@ -151,7 +200,7 @@ def runSimulation():
 				# This is done by creating two line segments, one for each plane. 
 				# the line segments end points are the two points we calculated earlier
 				# if these line segments are intersecting then we know the planes are on an intersecting course.
-				if dist <= plane1.exclusion_zone * 2.2 and doIntersect((plane1_x_low, plane1_y_low), (plane1_x_high, plane1_y_high), (plane2_x_low, plane2_y_low), (plane2_x_high, plane2_y_high)):
+				if dist <= plane1.exclusion_zone + plane2.exclusion_zone and doIntersect((plane1_x_low, plane1_y_low), (plane1_x_high, plane1_y_high), (plane2_x_low, plane2_y_low), (plane2_x_high, plane2_y_high)):
 					# set the intersecting flag as true because we now found two planes that are intersecting
 					intersecting = True
 
@@ -187,7 +236,13 @@ def runSimulation():
 					elif orientation((plane1_x_low, plane1_y_low), (plane1_x_high, plane1_y_high), (plane2_x_low, plane2_y_low)) == 0:
 						plane1.turn(-1)
 						plane2.turn(-1)
-			
+				elif dist <= plane1.exclusion_zone + plane2.exclusion_zone and doIntersect((plane1_x_low, plane1_y_low), (plane1_x_high, plane1_y_high), (plane2.x, plane2.y), (plane2_x_left, plane2_y_left)):
+					plane1.turn(1)
+					plane2.turn(1)
+				elif dist <= plane1.exclusion_zone + plane2.exclusion_zone and doIntersect((plane1_x_low, plane1_y_low), (plane1_x_high, plane1_y_high), (plane2.x, plane2.y), (plane2_x_right, plane2_y_right)):
+					plane1.turn(-1)
+					plane2.turn(-1)
+
 			# if we checked against all other planes and plane1 is not an an intersecting path with any of them
 			# we need to make sure that the plane is on its correct course to its target location
 			if not intersecting:
@@ -202,21 +257,35 @@ def runSimulation():
 					elif orientation((plane1.x, plane1.y), (plane1_x_high, plane1_y_high), plane1.target) == 2:
 						# turn the plane right
 						plane1.turn(1)
+
 			
 
 					
-
+		arrived = 0
 		# loop for drawing the planes on screen
 		for plane in planes:
-
 			plane1_x_high = plane.x + (500 * math.cos(math.radians(plane.heading)))
 			plane1_y_high = plane.y + (500 * math.sin(math.radians(plane.heading)))
 
 			plane1_x_low = plane.x - (plane.exclusion_zone * math.cos(math.radians(plane.heading)))
 			plane1_y_low = plane.y - (plane.exclusion_zone * math.sin(math.radians(plane.heading)))
 
-			# move the plane
-			plane.move()
+			plane1_x_right = plane.x + (plane.exclusion_zone * math.cos(math.radians(plane.heading + 90)))
+			plane1_y_right = plane.y + (plane.exclusion_zone * math.sin(math.radians(plane.heading + 90)))
+
+			plane1_x_left = plane.x + (plane.exclusion_zone * math.cos(math.radians(plane.heading - 90)))
+			plane1_y_left = plane.y + (plane.exclusion_zone * math.sin(math.radians(plane.heading - 90)))
+
+			if abs(plane.x - plane.target[0]) > 5 or abs(plane.y - plane.target[1]) > 5:
+				# move the plane
+				plane.move()
+			else:
+				arrived += 1
+			
+			if arrived == len(planes):
+				pygame.quit()
+				return
+
 			# draw a circle for the exlusion zone of the plane
 			pygame.draw.circle(DISPLAYSURF, (226, 57, 31), (int(plane.x), int(plane.y)), plane.exclusion_zone)
 			# draw a circle for the planes target
@@ -224,11 +293,9 @@ def runSimulation():
 			# draw a circle for the actual plane
 			pygame.draw.circle(DISPLAYSURF, (255, 255, 255), (int(plane.x), int(plane.y)), 2)
 			# draw a line for the path of the plane
-			pygame.draw.line(DISPLAYSURF, (0, 255, 0), (plane1_x_low, plane1_y_low), (plane1_x_high, plane1_y_high))
-
-
-
-
+			pygame.draw.line(DISPLAYSURF, (0, 255, 0), (plane.x, plane.y), (plane1_x_high, plane1_y_high))
+			pygame.draw.line(DISPLAYSURF, (0, 255, 0), (plane.x, plane.y), (plane1_x_right, plane1_y_right))
+			pygame.draw.line(DISPLAYSURF, (0, 255, 0), (plane.x, plane.y), (plane1_x_left, plane1_y_left))
 		pygame.display.update()
 		FPSCLOCK.tick(FPS)
 
