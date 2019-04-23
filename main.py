@@ -63,11 +63,11 @@ def onSegment(p, q, r):
 	   return True
 	return False
   
-#Q To find orientation of ordered triplet (p, q, r). 
-#Q The function returns following values 
-#Q 0 --> p, q and r are colinear 
-#Q 1 --> Clockwise 
-#Q 2 --> Counterclockwise 
+# function to find the orientation of r to the line segment defined by p and q
+# possible results
+# 0 --> p, q and r are colinear 
+# 1 --> Clockwise 
+# 2 --> Counterclockwise 
 def orientation(p, q, r):
 	# for details of below formula. 
 	val = (q[1] - p[1]) * (r[0] - q[0]) -  (q[0] - p[0]) * (r[1] - q[1])
@@ -176,9 +176,11 @@ def runSimulation(planes):
 				plane2_x_low = plane2.x - (plane2.exclusion_zone * math.cos(math.radians(plane2.heading)))
 				plane2_y_low = plane2.y - (plane2.exclusion_zone * math.sin(math.radians(plane2.heading)))
 
+				# coordinates for a point directly to the right of plane 2 at the edge of the exclusion zone
 				plane2_x_right = plane2.x + (plane2.exclusion_zone * math.cos(math.radians(plane2.heading + 90)))
 				plane2_y_right = plane2.y + (plane2.exclusion_zone * math.sin(math.radians(plane2.heading + 90)))
 
+				# coordinates for a point directly to the left of plane 2 at the edge of the exclusion zone
 				plane2_x_left = plane2.x + (plane2.exclusion_zone * math.cos(math.radians(plane2.heading - 90)))
 				plane2_y_left = plane2.y + (plane2.exclusion_zone * math.sin(math.radians(plane2.heading - 90)))
 
@@ -210,20 +212,27 @@ def runSimulation(planes):
 						# # now we determine the orientation of plane1 to plane2 and move it accordingly
 						# if plane 1 is to the right of plane2
 						if orientation((plane2_x_low, plane2_y_low), (plane2_x_high, plane2_y_high), (plane1_x_low, plane1_y_low)) == 1:
+							# turn right
 							plane2.turn(1)
 						# if plane1 is to the left of plane two
 						elif orientation((plane2_x_low, plane2_y_low), (plane2_x_high, plane2_y_high), (plane1_x_low, plane1_y_low)) == 2:
+							# turn left
 							plane2.turn(-1)
 					# else if plane 2 is to the left of plane1
 					elif orientation((plane1_x_low, plane1_y_low), (plane1_x_high, plane1_y_high), (plane2_x_low, plane2_y_low)) == 2:
 						# print("turn2")
 						# # determine orientation of plane1 to plane 2
 						if orientation((plane2_x_low, plane2_y_low), (plane2_x_high, plane2_y_high), (plane1_x_low, plane1_y_low)) == 1:
+							# turn left
 							plane2.turn(-1)
 						elif orientation((plane2_x_low, plane2_y_low), (plane2_x_high, plane2_y_high), (plane1_x_low, plane1_y_low)) == 2:
+							# turn right
 							plane2.turn(1)
+				# check if plane1 is going to intersect the line exiting 90 degrees to the right of plane2 (if so there will be a near miss but no collision)
+				# still need to move
 				elif dist <= plane1.exclusion_zone + plane2.exclusion_zone and doIntersect((plane1_x_low, plane1_y_low), (plane1_x_high, plane1_y_high), (plane2.x, plane2.y), (plane2_x_left, plane2_y_left)):
 					plane2.turn(1)
+				# check if plane2 is going to intersect the line exiting 90 degrees to the left of plane2
 				elif dist <= plane1.exclusion_zone + plane2.exclusion_zone and doIntersect((plane1_x_low, plane1_y_low), (plane1_x_high, plane1_y_high), (plane2.x, plane2.y), (plane2_x_right, plane2_y_right)):
 					plane2.turn(-1)
 
@@ -254,12 +263,6 @@ def runSimulation(planes):
 			plane1_x_low = plane.x - (plane.exclusion_zone * math.cos(math.radians(plane.heading)))
 			plane1_y_low = plane.y - (plane.exclusion_zone * math.sin(math.radians(plane.heading)))
 
-			plane1_x_right = plane.x + (plane.exclusion_zone * math.cos(math.radians(plane.heading + 90)))
-			plane1_y_right = plane.y + (plane.exclusion_zone * math.sin(math.radians(plane.heading + 90)))
-
-			plane1_x_left = plane.x + (plane.exclusion_zone * math.cos(math.radians(plane.heading - 90)))
-			plane1_y_left = plane.y + (plane.exclusion_zone * math.sin(math.radians(plane.heading - 90)))
-
 			if abs(plane.x - plane.target[0]) > 5 or abs(plane.y - plane.target[1]) > 5:
 				# move the plane
 				plane.move()
@@ -278,8 +281,6 @@ def runSimulation(planes):
 			pygame.draw.circle(DISPLAYSURF, (255, 255, 255), (int(plane.x), int(plane.y)), 2)
 			# draw a line for the path of the plane
 			pygame.draw.line(DISPLAYSURF, (0, 255, 0), (plane.x, plane.y), (plane1_x_high, plane1_y_high))
-			pygame.draw.line(DISPLAYSURF, (0, 255, 0), (plane.x, plane.y), (plane1_x_right, plane1_y_right))
-			pygame.draw.line(DISPLAYSURF, (0, 255, 0), (plane.x, plane.y), (plane1_x_left, plane1_y_left))
 		pygame.display.update()
 		FPSCLOCK.tick(FPS)
 
